@@ -4,8 +4,10 @@
  * You have two versions of the kernel, one naive and one optimized using shared memory. Compare the performance of the two.
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <vector>
-
+#include <cuda.h>
+#include <cuda_runtime.h>
 #define SIZE 10000
 
 #define TILE 16
@@ -20,8 +22,8 @@ inline void checkCuda(cudaError_t err) {
 __global__ void multiplyMatrix(float *a, float *b, float *c, int size) {
     
     // TODO: Compute the global row and column indices for this thread. Use blockIdx, blockDim, and threadIdx. It is a 2D grid of 2D blocks, watch slide if not sure how to do this.
-    int row = 0;
-    int col = 0;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
 
 
     // Compute a value in the result
@@ -38,8 +40,8 @@ __global__ void multiplyMatrix(float *a, float *b, float *c, int size) {
 __global__ void betterMultiplyMatrix(float *a, float *b, float *c, int size) {
     
     // TODO: Compute the global row and column indices for this thread. Use blockIdx, blockDim, and threadIdx.
-    int row = 0; 
-    int col = 0;
+    int row = blockIdx.y * blockDim.y + threadIdx.y;
+    int col = blockIdx.x * blockDim.x + threadIdx.x;
 
     // I used here a more efficient memory shared between threads in the same block, to reduce the number of accesses to global memory.
     __shared__ float aTile[TILE][TILE];
@@ -49,12 +51,23 @@ __global__ void betterMultiplyMatrix(float *a, float *b, float *c, int size) {
 
     // TODO: this loop runs "size / TILE" times using integer division.
     // Add the missing bound check so that the last blocks of threads don't make out-of-bounds accesses to a and b.
+    int numTiles = (size + TILE - 1) / TILE;
 
+    for (int i = 0; i < numTiles; i++) {
 
-    for (int i = 0; i < size / TILE; i ++) {
-        // Load the tiles from global memory to shared memory
-        aTile[threadIdx.y][threadIdx.x] = a[row * size + (i * TILE + threadIdx.x)];
-        bTile[threadIdx.y][threadIdx.x] = b[(i * TILE + threadIdx.y) * size + col];
+        if (row < size && (i * TILE + threadIdx.x) < size) {
+            aTile[threadIdx.y][threadIdx.x] = a[row * size + (i * TILE + threadIdx.x)];
+        }
+        else {
+            aTile[threadIdx.y][threadIdx.x] = 0;
+        }
+
+        if (col < size && (i * TILE + threadIdx.y) < size) {
+            bTile[threadIdx.y][threadIdx.x] = b[(i * TILE + threadIdx.y) * size + col];
+        }
+        else {
+            bTile[threadIdx.y][threadIdx.x] = 0;
+        }
         __syncthreads();
         // Compute smaller matrix multiplication
         for (int j = 0; j < TILE; j++) {
@@ -63,7 +76,9 @@ __global__ void betterMultiplyMatrix(float *a, float *b, float *c, int size) {
         __syncthreads();
     }
 
-    c[row * size + col] = sum;
+    if (row < size && col < size) {
+        c[row * size + col] = sum;
+    }
 }
 
 int main(void) {
@@ -111,6 +126,7 @@ int main(void) {
     // TODO: a kernel launch can fail silently (bad grid/block configuration,
     // out-of-bounds shared memory, etc.). Add a cudaGetLastError() + checkCuda()
     // call right here, immediately after the launch.
+    checkCuda(cudaGetLastError());
 
     err = cudaEventRecord(stop);
     checkCuda(err);
@@ -135,4 +151,8 @@ int main(void) {
     checkCuda(err);
 
     printf("Time: %f ms\n", ms);
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+    return 0;
 }

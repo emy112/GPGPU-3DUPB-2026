@@ -8,7 +8,7 @@ project(CleanCudaExamples LANGUAGES CXX CUDA)
 
 # TODO: Actualize this number to fit your local architecture. Otherwise, kernels won't function properly and may
 # even be undeterministic. You can check your GPU architecture at https://developer.nvidia.com/cuda/gpus and set the appropriate value.
-set(CMAKE_CUDA_ARCHITECTURES 120)
+set(CMAKE_CUDA_ARCHITECTURES 86)
 
 # Gather the source files
 file(GLOB_RECURSE SOURCES_1
