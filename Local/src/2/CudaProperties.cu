@@ -7,7 +7,7 @@
     - Number of SP cores(SP = Stream Processor)
 */
 #include <stdio.h>
-
+#include <stdlib.h>
 // TODO: Have I forgotten to include something ? (Hint: Look at exercise 1 - GLFLOPS)
 // Bonus question: Why the program still compiles ?
 
@@ -80,7 +80,7 @@ int main() {
     err = cudaGetDeviceProperties(&prop, 0);
     printf("Device name: %s\n", prop.name);
     printf("Compute capability: %d.%d\n", prop.major, prop.minor);
-
+    printf("Total global memory: %.2f GB\n", (float)prop.totalGlobalMem / (1024 * 1024 * 1024));
     // Major and minor version of compute capability
     // Those ones can be used to determine the number of cores per SM
     // and the number of SMs per GPU

@@ -27,6 +27,7 @@ __global__ void kernel_gflops(float* a, float* b) {
     for (int i = 0; i < OPS_SCALE; i++) {
         x = x * x + x; // 2 FP32 ops, 0 FP64 ops
     }
+    b[idx] = x;
     // double y = (double) x;
     // FP64: 2 op per iteration
     // for (int i = 0; i < OPS_SCALE; i++) {
@@ -92,7 +93,7 @@ int main(void) {
     cudaCheckError(err);
 
     dim3 blockSize(512);
-    dim3 blockCount(size + blockSize.x - 1 / blockSize.x);
+    dim3 blockCount((size + blockSize.x - 1) / blockSize.x);
     // Launch kernel
     err = cudaEventRecord(start, 0);
     cudaCheckError(err);
