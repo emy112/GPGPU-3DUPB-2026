@@ -5,6 +5,8 @@
  * Which kernel is the most expensive one? Why?
 */
 
+//took 2,29s
+//accelerare cuda: 142,2/2,29 ~=62
 #include "header.cuh"
 
 #define SPHERE_COUNT 489
@@ -158,10 +160,28 @@ int main(void) {
      *    Is the increase linear with pixel count, or more pronounced? Why, given the block/thread
      *    launch configuration below and the GPU's number of SMs/cores?
      */
-    int nx = 512;
-    int ny = 512;
-    int ns = 10;
 
+    /* 
+    *   1.Este o creștere de aproximativ 2x?Da, este o creștere aproape perfect liniară
+    * Fiecare thread de pe GPU execută o buclă de $ns$ ori. 
+    * Dublarea valorii ns dublează numărul de raze aruncate în scenă și volumul de calcule matematice
+    *   2.Dublarea rezoluției. Raport timp:8568.729492 ms/2266.8ms =3.78x
+    * Dublarea ambelor dimensiuni (nx și ny) quadruplează numărul total de pixeli (262.144 -> 1.048.576 pixeli),
+    * deci volumul de muncă crește de 4 ori.
+    * 
+    * Creșterea timpului este de 3,78× în loc de 4,0× din următoarele motive hardware:
+    * -Mascarea latențelor (Latency Hiding): Având de 4 ori mai multe blocuri pe GPU,
+    * scheduler-ul hardware comută instant pe un alt warp activ atunci când un thread așteaptă date din memorie,
+    * eliminând timpii morți ai nucleelor.
+    * -Ocuparea maximă a SM-urilor: Grila mai mare la 1024 x 1024 genereaza suficiente blocuri de thread-uri pentru a satura complet
+    * toate SM urile si nucleele CUDA (la 1024 Gpu ul este utilizat 100%),in timp ce la 512 o parte din nuclee pot ramane neutilizate
+    */
+    int nx = 1024;
+    int ny = 1024;
+    int ns = 10;
+    //10 sps , 512x512 -  2266.8ms
+    //20 sps ,512x512 -  4442.516602 ms
+    //10 sps , 1024x1024 -8568.729492 ms
     int num_pixels = nx * ny;
 
     color *fb_gpu;

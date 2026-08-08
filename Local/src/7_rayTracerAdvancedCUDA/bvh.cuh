@@ -67,16 +67,16 @@ __device__ bool bvh_node::hit(const ray& r, interval ray_t, hit_record& rec) con
     // here using an explicit stack, before peeking at the iterative reference implementation further down.
 
     //Recursive approach
-     if (!_bbox.hit(r, ray_t))
+    /* if (!_bbox.hit(r, ray_t))
          return false;
 
      bool hit_left = _left->hit(r, ray_t, rec);
      bool hit_right = _right->hit(r, interval(ray_t.min, hit_left ? rec.t : ray_t.max), rec);
 
      return hit_left || hit_right;
-
+     */
      // Iterative approach --------------------------------------------------------------------------------------------
-     /*/
+     
     const bvh_node* stack[64];
     int stackTop = 0;
     bool hit = false;
@@ -105,7 +105,7 @@ __device__ bool bvh_node::hit(const ray& r, interval ray_t, hit_record& rec) con
          }
      }
      return hit;
-     /*/
+     
 }
 
 __device__ bvh_node::bvh_node(hittable **l, int n, curandState *localState) {
@@ -113,7 +113,7 @@ __device__ bvh_node::bvh_node(hittable **l, int n, curandState *localState) {
 	// TODO: Analyze and see the recursive version for tree construction. Try to implement an iterative version here using an explicit stack, before peeking at
 
     // Recursive approach
-     int axis = randomInt(localState, 0, 2);
+     /*int axis = randomInt(localState, 0, 2);
      bool (*comparator)(hittable*, hittable*);
      switch (axis) {
          case 0:
@@ -145,10 +145,10 @@ __device__ bvh_node::bvh_node(hittable **l, int n, curandState *localState) {
      }
 
      _bbox = aabb(_left->bounding_box(), _right->bounding_box());
-
+     */
     
     // Iterative approach -------------------------------------------------------------------------------------------
-    /*/
+    
     // Get a modifiable copy of the list
     
     hittable** list = new hittable *[n];
@@ -208,7 +208,8 @@ __device__ bvh_node::bvh_node(hittable **l, int n, curandState *localState) {
     _bbox = aabb(_left->bounding_box(), _right->bounding_box());
 
     // TODO: Have I forgotten something? Investigate memory leaks and fix them.
-    /*/
+    delete[list];
+    delete[nodes];
 }
 
 __device__ aabb bvh_node::bounding_box() const {

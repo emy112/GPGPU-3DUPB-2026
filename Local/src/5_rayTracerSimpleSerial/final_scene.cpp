@@ -10,7 +10,8 @@
 #include <iostream>
 #include <fstream>
 // TODO: Use the chrono library to see how long it takes to render the scene
-
+#include <chrono>
+//took ~2.22 min(142s)
 
 color ray_color(const ray& r, const hittable& world, int depth) {
     hit_record rec;
@@ -107,7 +108,7 @@ int main() {
     printf("Rendering...\n");
 
     // TODO: start the chrono timer here
-
+    auto start = std::chrono::high_resolution_clock::now();
     // Render
     for (int j = image_height-1; j >= 0; --j) {
         for (int i = 0; i < image_width; ++i) {
@@ -123,6 +124,9 @@ int main() {
     }
 
     // TODO: stop the timer here and print the elapsed milliseconds
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+    printf("Elapsed time: %lld ms\n", milliseconds);
 }
 
 

@@ -19,34 +19,35 @@ inline void cudaCheckError(cudaError_t err) {
     }
 }
 
-__global__ void computeSum(unsigned char *vector, int *sum) {
+__global__ void computeSum(unsigned char* vector, int* sum) {
 
     // TODO: Compute the global thread index for this thread. Use blockIdx, blockDim, and threadIdx. It is a 1D grid of 1D blocks, watch slide if not sure how to do this.
-    int tid = 0;
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
     // Each thread computes the square of a single element,
     // then adds it to the running total
     if (tid < SIZE) {
-		// TODO: Read about atomic operations in CUDA.
-        atomicAdd(sum, vector[tid] * vector[tid]);
+        // TODO: Read about atomic operations in CUDA.
+        int val = vector[tid];
+        atomicAdd(sum, val * val);
     }
 }
 
 int main(void) {
 
-    unsigned char *d_vector;
-    int *d_sum;
+    unsigned char* d_vector;
+    int* d_sum;
     cudaError_t err;
 
-    err = cudaMalloc((void **)&d_vector, SIZE * sizeof(unsigned char));
+    err = cudaMalloc((void**)&d_vector, SIZE * sizeof(unsigned char));
     cudaCheckError(err);
 
-    err = cudaMalloc((void **)&d_sum, sizeof(int));
+    err = cudaMalloc((void**)&d_sum, sizeof(int));
     cudaCheckError(err);
 
     cudaMemset(d_sum, 0, sizeof(int));
-	// Fill the vector with 2s. Each thread will compute the square of a single element, so the sum should be 4 * SIZE = 4000000
-	// It is a didactic example, so we are using cudaMemset to fill the vector with 2s.
+    // Fill the vector with 2s. Each thread will compute the square of a single element, so the sum should be 4 * SIZE = 4000000
+    // It is a didactic example, so we are using cudaMemset to fill the vector with 2s.
     cudaMemset(d_vector, 2, SIZE * sizeof(unsigned char));
 
     dim3 blockSize(threadsPerBlock);
@@ -54,7 +55,7 @@ int main(void) {
     // This is what does (N + K - 1 )/ K
     dim3 blockCount((SIZE + threadsPerBlock - 1) / threadsPerBlock);
 
-    computeSum<<<blockCount, blockSize>>>(d_vector, d_sum);
+    computeSum << <blockCount, blockSize >> > (d_vector, d_sum);
     err = cudaGetLastError();
     cudaCheckError(err);
     int sum;
@@ -64,7 +65,10 @@ int main(void) {
     printf("Sum of squares of the vector is %d\n", sum);
 
     // TODO: d_vector and d_sum are allocated with cudaMalloc but never freed. Free the resources before exiting the program.
+    cudaFree(d_vector);
+    cudaFree(d_sum);
 
+    return 0;
     // TODO: sum is a 32-bit int. Each byte in the vector is at most 255, so
     // each squared term is at most 65025, and with SIZE = 1000000 elements
     // the total can get big easily and overflow. Try changing the cudaMemset value for
