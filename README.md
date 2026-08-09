@@ -45,7 +45,7 @@
   * **Amortizarea overhead-ului:** Timpul fix de lansare a programului se imparte la un numar de 4 ori mai mare de pixeli.
 
 
-# Sarcina Practica 2: BVH Recursiv vs. Iterativ si Analiza Stivei
+ # Task2
 
 ## 1. Setup si Comanda de Profiling
 
@@ -60,20 +60,31 @@
 * **Implementare Recursiva:**
   * Dimensiune stiva necesara: 4096 bytes (4 KB)
   * Timp de randare: ~9651.7 ms (~9.65 secunde)
-  * Status executie: Esueaza fara marirea stivei (Stack Overflow / Illegal Memory Access)
 
 * **Implementare Iterativa:**
-  * Dimensiune stiva necesara: 1024 bytes (1 KB - valoarea implicita)
-  * Timp de randare: 1065.61 ms (~1.06 secunde)
-  * Status executie: Ruleaza stabil pe stiva implicita
+  * Dimensiune stiva necesara: 4096 bytes (4 KB)
+  * Timp de randare: 1724.13 ms (~1.72 secunde)
 
-* **Accelerare (Speedup):**  
-  Varianta iterativa este de **~9.05 ori mai rapida** decat varianta recursiva (9651.7 ms / 1065.61 ms).
-
----
+* **Accelerare (Speedup):**
+  Varianta iterativa este de **~5.6 ori mai rapida** decat varianta recursiva (9651.7 ms / 1724.13 ms).
 
 ## 3. Analiza si Interpretarea Rezultatelor
 
 * **De ce crapa varianta recursiva pe stiva implicita?**  
   Fiecare apel recursiv genereaza un cadru nou pe stiva locala a fiecarui thread de pe GPU. La un arbore BVH adanc, stiva implicita oferita de CUDA (1 KB) este depasita rapid, cauzand o eroare de tip device-side stack overflow. Marirea stivei la 4 KB (`cudaDeviceSetLimit`) rezolva aceasta problema, dar iroseste memorie VRAM la mii de thread-uri concurente.
 
+
+ **Rezolvarea problemelor de memorie:**
+  * S-au adaugat apelurile `delete[] list;` si `delete[] nodes;` la finalul constructorului `bvh_node` pentru a elibera tablourile temporare din GPU heap.
+  * S-a initializat explicit `_last_level = false;` pe nodul radacina pentru a preveni citirea datelor neinitializate.
+  * Verificare cu `compute-sanitizer`:
+
+
+```cmd
+C:\Users\emi\Desktop\GPGPU-Nou\Local\build\Debug>compute-sanitizer --tool memcheck --leak-check full RayTracerAdvancedCUDA.exe
+========= COMPUTE-SANITIZER
+Allocated stack size: 4096 bytes
+Successfully rendered 900x600 image with 10 samples per pixel.
+Time: 164999ms
+========= LEAK SUMMARY: 0 bytes leaked in 0 allocations
+========= ERROR SUMMARY: 0 errors

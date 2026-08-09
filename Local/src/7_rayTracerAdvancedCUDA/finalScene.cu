@@ -7,9 +7,9 @@
 
 // The stack size is the amount of memory allocated for each thread's call stack. This multiplier is used in the cudaDeviceSetLimit call to adjust the stack size.
 // I set it to 1, which is same as reading the current stack size and using that value.
-#define STACK_MULTIPLIER 2
-//video stack size -4kb, timp 9.6s
-
+#define STACK_MULTIPLIER 4
+//video stack size -4kb, timp 9.6s(varianta recursiva)
+//video stack size 4kb, timp 1,72s(varianta interativa)-1724.13ms
 __device__ color rayColor(const ray& r, const color& background, hittable **world, curandState *localRandState) {
     ray curRay = r;
 
